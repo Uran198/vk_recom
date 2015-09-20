@@ -14,16 +14,13 @@
 
 import requests
 import logging
-from time import sleep
-from operator import itemgetter
-import os
 import json
 from consts import oauth_link
 
-print(oauth_link)
+#print(oauth_link)
 
 logger = logging.getLogger('warning')
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.ERROR)
 
 class VK:
 	__api_url = "https://api.vk.com/method/"
@@ -31,28 +28,43 @@ class VK:
 	__config_file = 'config.json'
 	__config_data = None
 
-	def __init__(self, uid=None):
+	def __init__(self, uid = None):
 		if not self.__config_data:
 			self.__config_data = json.load(open(self.__config_file))
-		if uid and self.__config_data.get(uid, None):
-			self.__access_token = self.__config_data[uid]['access_token']
+		use_default = not uid
+		if uid and not self.__config_data.get(uid, None):
+			logger.warning("Couldn't find uid '{0}' in config file '{1}'".format(uid, self.__config_file))
+			logger.warning("You should add access_token to config file to use this uid")
+			use_default = True
+		if use_default:
+			uids = list(self.__config_data.keys())
+			logger.warning("Using defaul uid")
+			if len(uids) == 0:
+				logger.error("No available uids, please add some to '{0}'". format(self.__config_file))
+				exit(1)
+			else:
+				self.uid = uids[0]
 		else:
-			if not self.__config_data.get(uid, None):
-				logger.warning("Couldn't find uid '{0}' in config file '{1}'".format(uid, self.__config_file))
-				logger.warning("You should add access_token to config file to use this uid")
-				logger.warning("You can do it by following the link:")
-				logger.warning(oath_link)
-			self.__access_token = ''
+			self.uid = uid
+		self.__access_token = self.__config_data[self.uid]['access_token']
 
 	def call_method(self, method, params):
 		req_url = self.__api_url+'/'+method
 		params = params.copy()
 		params['access_token'] = self.__access_token
-		return requests.get(req_url, params=params)
+		resp = requests.get(req_url, params=params)
+		resp.raise_for_status()
+		parsed = json.loads(resp.text)
+		if 'response' not in parsed.keys():
+			logger.error("Something gone wrong!")
+			logger.error(resp.text)
+		else:
+			return parsed['response']
 
-params = {}
-vk = VK(uid = "171937039")
-resp = vk.call_method('fave.getPosts', params)
-resp.raise_for_status()
-data = json.loads(resp.text)
-print(data)
+#small testing
+vk = VK()
+
+# get subscriptions
+params = { 'user_id' : vk.uid }
+subscriptions = vk.call_method('users.getSubscriptions', params)
+print(subscriptions)
