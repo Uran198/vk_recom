@@ -15,6 +15,7 @@
 import requests
 import logging
 import json
+from time import sleep
 from consts import oauth_link
 
 #print(oauth_link)
@@ -27,6 +28,8 @@ class VK:
 	#in config file you have ids & access tokens
 	__config_file = 'config.json'
 	__config_data = None
+	__timeout = 1
+	__retries = 3
 
 	def __init__(self, uid = None):
 		if not self.__config_data:
@@ -52,7 +55,13 @@ class VK:
 		req_url = self.__api_url+'/'+method
 		params = params.copy()
 		params['access_token'] = self.__access_token
-		resp = requests.get(req_url, params=params)
+		for i in range(self.__retries):
+			try:
+				resp = requests.get(req_url, params=params, timeout=self.__timeout)
+			except requests.exceptions.Timeout:
+				sleep(self.__timeout)
+				continue
+			break
 		resp.raise_for_status()
 		parsed = json.loads(resp.text)
 		if 'response' not in parsed.keys():
@@ -62,9 +71,10 @@ class VK:
 			return parsed['response']
 
 #small testing
-vk = VK()
+if __name__ == '__main__':
+	vk = VK()
 
-# get subscriptions
-params = { 'user_id' : vk.uid }
-subscriptions = vk.call_method('users.getSubscriptions', params)
-print(subscriptions)
+	# get subscriptions
+	params = { 'user_id' : vk.uid }
+	subscriptions = vk.call_method('users.getSubscriptions', params)
+	print(subscriptions)
