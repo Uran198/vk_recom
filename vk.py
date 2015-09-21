@@ -56,20 +56,25 @@ class VK:
 		params = params.copy()
 		params['access_token'] = self.__access_token
 		params['v'] = api_version
-		for i in range(self.__retries):
-			try:
-				resp = requests.get(req_url, params=params, timeout=self.__timeout)
-			except requests.exceptions.Timeout:
+		for _ in range(self.__retries):
+			for _ in range(self.__retries):
+				try:
+					resp = requests.get(req_url, params=params, timeout=self.__timeout)
+				except requests.exceptions.Timeout:
+					sleep(self.__timeout)
+					continue
+				break
+			resp.raise_for_status()
+			parsed = json.loads(resp.text)
+			if 'response' in parsed.keys():
+				return parsed['response']
+			elif parsed['error']['error_code'] == 6:
 				sleep(self.__timeout)
 				continue
-			break
-		resp.raise_for_status()
-		parsed = json.loads(resp.text)
-		if 'response' not in parsed.keys():
-			logger.error("Something gone wrong!")
-			logger.error(resp.text)
-		else:
-			return parsed['response']
+			else:
+				logger.error("Something gone wrong!")
+				logger.error(resp.text)
+				exit(1)
 
 #small testing
 if __name__ == '__main__':
