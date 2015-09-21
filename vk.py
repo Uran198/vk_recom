@@ -16,7 +16,7 @@ import requests
 import logging
 import json
 from time import sleep
-from consts import oauth_link
+from consts import oauth_link, api_version
 
 #print(oauth_link)
 
@@ -55,6 +55,7 @@ class VK:
 		req_url = self.__api_url+'/'+method
 		params = params.copy()
 		params['access_token'] = self.__access_token
+		params['v'] = api_version
 		for i in range(self.__retries):
 			try:
 				resp = requests.get(req_url, params=params, timeout=self.__timeout)
