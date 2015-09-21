@@ -20,6 +20,12 @@ from consts import oauth_link, api_version
 
 #print(oauth_link)
 
+from enum import Enum
+
+#add error codes here for more obvious code
+class ErrorCode(Enum):
+    MuchRequestsError = 6
+
 logger = logging.getLogger('warning')
 logger.setLevel(logging.ERROR)
 
@@ -68,7 +74,7 @@ class VK:
 			parsed = json.loads(resp.text)
 			if 'response' in parsed.keys():
 				return parsed['response']
-			elif parsed['error']['error_code'] == 6:
+			elif parsed['error']['error_code'] == ErrorCode.MuchRequestsError:
 				sleep(self.__timeout)
 				continue
 			else:
