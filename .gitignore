@@ -1,6 +1,8 @@
 __pycache__
-
-# here is access token
-config.json
 .idea
+
+# access token
+config.json
+# sesitive data
+data.json
 
