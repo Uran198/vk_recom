@@ -2,8 +2,10 @@ import json
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import cross_validation
 from sklearn import linear_model
+from sklearn.ensemble import RandomForestClassifier
 
 def flatten(mp):
 	rs = {}
@@ -24,13 +26,15 @@ if __name__ == "__main__":
 	df.loc[np.isnan(df['id']), 'id'] = df['post_id']
 	df['likes'] = df['likes.user_likes']
 	df = df[['id', 'text', 'likes']]
-	vectorizer = CountVectorizer(min_df=1)
+	vectorizer = CountVectorizer(min_df=1, binary=True)
+	#vectorizer = TfidfVectorizer(min_df=1)
 	X = df['text']
 	Y = df['likes']
 	X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, Y, test_size = 0.4)
 	X_train = vectorizer.fit_transform(X_train)
 	X_test = vectorizer.transform(X_test)
-	mod = linear_model.LogisticRegression(dual=False)
+	mod = RandomForestClassifier()
+	#mod = linear_model.LogisticRegression(dual=False)
 	mod.fit(X_train, y_train)
 	print("Train score:", mod.score(X_train, y_train))
 	print("Test score:", mod.score(X_test, y_test))
